@@ -20,6 +20,7 @@ package com.graphhopper.routing.util;
 import com.graphhopper.reader.ReaderWay;
 import com.graphhopper.routing.ev.EncodedValue;
 import com.graphhopper.routing.ev.UnsignedDecimalEncodedValue;
+import com.graphhopper.routing.util.EncodingManager.Access;
 import com.graphhopper.storage.IntsRef;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.PMap;
@@ -175,7 +176,8 @@ public class CarFlagEncoder extends AbstractFlagEncoder {
         }
         Integer speed = defaultSpeedMap.get(highwayValue);
         if (speed == null)
-            throw new IllegalStateException(toString() + ", no speed found for: " + highwayValue + ", tags: " + way);
+        	return 20;
+            //throw new IllegalStateException(toString() + ", no speed found for: " + highwayValue + ", tags: " + way);
 
         if (highwayValue.equals("track")) {
             String tt = way.getTag("tracktype");
@@ -191,46 +193,56 @@ public class CarFlagEncoder extends AbstractFlagEncoder {
 
     @Override
     public EncodingManager.Access getAccess(ReaderWay way) {
+    	
+    	if(way.getTag("railway") == null) {
+    		if(way.hasTag("route", "railway","train")) {
+    			return Access.WAY;
+    		}
+    		return Access.CAN_SKIP;
+    	}
+    	//if(true)
+    		return Access.WAY;
+    	
         // TODO: Ferries have conditionals, like opening hours or are closed during some time in the year
-        String highwayValue = way.getTag("highway");
-        String firstValue = way.getFirstPriorityTag(restrictions);
-        if (highwayValue == null) {
-            if (way.hasTag("route", ferries)) {
-                if (restrictedValues.contains(firstValue))
-                    return EncodingManager.Access.CAN_SKIP;
-                if (intendedValues.contains(firstValue) ||
-                        // implied default is allowed only if foot and bicycle is not specified:
-                        firstValue.isEmpty() && !way.hasTag("foot") && !way.hasTag("bicycle"))
-                    return EncodingManager.Access.FERRY;
-            }
-            return EncodingManager.Access.CAN_SKIP;
-        }
-
-        if ("track".equals(highwayValue) && trackTypeSpeedMap.get(way.getTag("tracktype")) == null)
-            return EncodingManager.Access.CAN_SKIP;
-
-        if (!defaultSpeedMap.containsKey(highwayValue))
-            return EncodingManager.Access.CAN_SKIP;
-
-        if (way.hasTag("impassable", "yes") || way.hasTag("status", "impassable"))
-            return EncodingManager.Access.CAN_SKIP;
-
-        // multiple restrictions needs special handling compared to foot and bike, see also motorcycle
-        if (!firstValue.isEmpty()) {
-            if (restrictedValues.contains(firstValue) && !getConditionalTagInspector().isRestrictedWayConditionallyPermitted(way))
-                return EncodingManager.Access.CAN_SKIP;
-            if (intendedValues.contains(firstValue))
-                return EncodingManager.Access.WAY;
-        }
-
-        // do not drive street cars into fords
-        if (isBlockFords() && ("ford".equals(highwayValue) || way.hasTag("ford")))
-            return EncodingManager.Access.CAN_SKIP;
-
-        if (getConditionalTagInspector().isPermittedWayConditionallyRestricted(way))
-            return EncodingManager.Access.CAN_SKIP;
-        else
-            return EncodingManager.Access.WAY;
+//        String highwayValue = way.getTag("highway");
+//        String firstValue = way.getFirstPriorityTag(restrictions);
+//        if (highwayValue == null) {
+//            if (way.hasTag("route", ferries)) {
+//                if (restrictedValues.contains(firstValue))
+//                    return EncodingManager.Access.CAN_SKIP;
+//                if (intendedValues.contains(firstValue) ||
+//                        // implied default is allowed only if foot and bicycle is not specified:
+//                        firstValue.isEmpty() && !way.hasTag("foot") && !way.hasTag("bicycle"))
+//                    return EncodingManager.Access.FERRY;
+//            }
+//            return EncodingManager.Access.CAN_SKIP;
+//        }
+//
+//        if ("track".equals(highwayValue) && trackTypeSpeedMap.get(way.getTag("tracktype")) == null)
+//            return EncodingManager.Access.CAN_SKIP;
+//
+//        if (!defaultSpeedMap.containsKey(highwayValue))
+//            return EncodingManager.Access.CAN_SKIP;
+//
+//        if (way.hasTag("impassable", "yes") || way.hasTag("status", "impassable"))
+//            return EncodingManager.Access.CAN_SKIP;
+//
+//        // multiple restrictions needs special handling compared to foot and bike, see also motorcycle
+//        if (!firstValue.isEmpty()) {
+//            if (restrictedValues.contains(firstValue) && !getConditionalTagInspector().isRestrictedWayConditionallyPermitted(way))
+//                return EncodingManager.Access.CAN_SKIP;
+//            if (intendedValues.contains(firstValue))
+//                return EncodingManager.Access.WAY;
+//        }
+//
+//        // do not drive street cars into fords
+//        if (isBlockFords() && ("ford".equals(highwayValue) || way.hasTag("ford")))
+//            return EncodingManager.Access.CAN_SKIP;
+//
+//        if (getConditionalTagInspector().isPermittedWayConditionallyRestricted(way))
+//            return EncodingManager.Access.CAN_SKIP;
+//        else
+//            return EncodingManager.Access.WAY;
     }
 
     @Override
